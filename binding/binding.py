@@ -10,13 +10,12 @@ def get_argument():
     source = Source.for_frame(callFrame)
     expression = source.asttokens().get_text(callNode.args[0])
 
-    word, expression = expression.split('.', 1)
-    obj = callFrame.f_locals[word]
-    while '.' in expression:
-        word, expression = expression.split('.', 1)
-        obj = getattr(obj, word)
+    words = expression.split('.')
+    obj = callFrame.f_locals[words.pop(0)]
+    while len(words) > 1:
+        obj = getattr(obj, words.pop(0))
 
-    return obj, expression
+    return obj, words[0]
 
 class Binding:
 
