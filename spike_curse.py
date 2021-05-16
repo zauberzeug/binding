@@ -51,6 +51,7 @@ class BindableProperty:
                 setattr(obj, name, value)
 
 curse(bool, 'bind_to', bind_to)
+curse(type(None), 'bind_to', bind_to)
 
 class A:
 
@@ -71,8 +72,8 @@ assert a.x == True and a.y == True
 a.x = False
 assert a.x == False and a.y == False
 
-b = A(True, False)
-assert b.x == True and b.y == False
+b = A(None, False)
+assert b.x == None and b.y == False
 
 b.x.bind_to(b.y)
-assert b.x == True and b.y == True
+assert b.x == None and b.y == None
