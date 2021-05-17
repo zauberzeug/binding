@@ -12,27 +12,19 @@ def _extract_object(expression, callFrame):
         obj = getattr(obj, words.pop(0))
     return obj, words[0]
 
-def _get_argument():
+def _get_parent_and_argument(method_name):
 
+    sep = f'.{method_name}('
+    expression = inspect.stack()[2].code_context[0].strip().split(sep)[0]
     callFrame = inspect.currentframe().f_back.f_back
+    self_obj, self_name = _extract_object(expression, callFrame)
+
     callNode = Source.executing(callFrame).node
     source = Source.for_frame(callFrame)
     expression = source.asttokens().get_text(callNode.args[0])
-    return _extract_object(expression, callFrame)
+    other_obj, other_name = _extract_object(expression, callFrame)
 
-def _get_argument():
-
-    callFrame = inspect.currentframe().f_back.f_back
-    callNode = Source.executing(callFrame).node
-    source = Source.for_frame(callFrame)
-    expression = source.asttokens().get_text(callNode.args[0])
-
-    words = expression.split('.')
-    obj = callFrame.f_locals[words.pop(0)]
-    while len(words) > 1:
-        obj = getattr(obj, words.pop(0))
-
-    return obj, words[0]
+    return self_obj, self_name, other_obj, other_name
 
 bindings = defaultdict(list)
 
@@ -53,31 +45,19 @@ def reset():
 
 def _bind_to(self, _, forward=lambda x: x):
 
-    expression = inspect.stack()[1].code_context[0].strip().split('.bind_to(')[0]
-    callFrame = inspect.currentframe().f_back
-    self_obj, self_name = _extract_object(expression, callFrame)
-    other_obj, other_name = _get_argument()
-
+    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_to')
     setattr(other_obj, other_name, forward(self))
     bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
 
 def _bind_from(_, other, backward=lambda x: x):
 
-    expression = inspect.stack()[1].code_context[0].strip().split('.bind_from(')[0]
-    callFrame = inspect.currentframe().f_back
-    self_obj, self_name = _extract_object(expression, callFrame)
-    other_obj, other_name = _get_argument()
-
+    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_from')
     setattr(self_obj, self_name, backward(other))
     bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
 
 def _bind_2way(self, _, forward=lambda x: x, backward=lambda x: x):
 
-    expression = inspect.stack()[1].code_context[0].strip().split('.bind_2way(')[0]
-    callFrame = inspect.currentframe().f_back
-    self_obj, self_name = _extract_object(expression, callFrame)
-    other_obj, other_name = _get_argument()
-
+    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_2way')
     setattr(other_obj, other_name, forward(self))
     bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
     bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
