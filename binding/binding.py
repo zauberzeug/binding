@@ -12,13 +12,15 @@ def _extract_object(expression, callFrame):
         obj = getattr(obj, words.pop(0))
     return obj, words[0]
 
-def _get_parent_and_argument(method_name):
+def _get_parent_and_argument(method_name, nesting):
 
     sep = f'.{method_name}('
     expression = inspect.stack()[2].code_context[0].strip().split(sep)[0]
     callFrame = inspect.currentframe().f_back.f_back
     self_obj, self_name = _extract_object(expression, callFrame)
 
+    for _ in range(nesting):
+        callFrame = callFrame.f_back
     callNode = Source.executing(callFrame).node
     source = Source.for_frame(callFrame)
     expression = source.asttokens().get_text(callNode.args[0])
@@ -56,21 +58,21 @@ def reset():
 
     bindings.clear()
 
-def _bind_to(self, _, forward=lambda x: x):
+def _bind_to(self, _, forward=lambda x: x, nesting=0):
 
-    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_to')
+    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_to', nesting)
     bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
     propagate(self_obj, self_name, self)
 
-def _bind_from(_, other, backward=lambda x: x):
+def _bind_from(_, other, backward=lambda x: x, nesting=0):
 
-    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_from')
+    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_from', nesting)
     bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
     propagate(other_obj, other_name, other)
 
-def _bind(_, other, forward=lambda x: x, backward=lambda x: x):
+def _bind(_, other, forward=lambda x: x, backward=lambda x: x, nesting=0):
 
-    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind')
+    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind', nesting)
     bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
     bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
     propagate(other_obj, other_name, other)
