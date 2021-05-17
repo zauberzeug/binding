@@ -1,5 +1,5 @@
 import pytest
-from binding import BindableProperty, Binding
+from binding import BindableProperty, update, reset
 
 class Temperature:
 
@@ -69,7 +69,7 @@ def test_backward_normal():
     t.k = 293.15
     assert t.c == -273.15 and t.k == 293.15
 
-    Binding.update()
+    update()
     assert t.c == 20.0 and t.k == 293.15
 
     t.c = 0.0
@@ -77,7 +77,7 @@ def test_backward_normal():
 
 def test_2way_normal():
 
-    Binding.reset()  # TODO: how to avoid this line?
+    reset()  # TODO: how to avoid this line?
 
     t = Temperature()
     t.c.bind_2way(t.k, forward=lambda c: c + 273.15, backward=lambda k: k - 273.15)
@@ -89,5 +89,5 @@ def test_2way_normal():
     t.k = 0.0
     assert t.c == 20.0 and t.k == 0.0
 
-    Binding.update()
+    update()
     assert t.c == -273.15 and t.k == 0.0

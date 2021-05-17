@@ -1,4 +1,4 @@
-from binding import BindableProperty, Binding
+from binding import BindableProperty, update
 
 class A:
 
@@ -39,13 +39,13 @@ def test_backward():
     b.x += 1
     assert a.x == 20 and b.x == 21
 
-    Binding.update()
+    update()
     assert a.x == 21 and b.x == 21
 
     a.x += 1
     assert a.x == 22 and b.x == 21
 
-    Binding.update()
+    update()
     assert a.x == 21 and b.x == 21
 
 def test_two_way():
@@ -62,5 +62,5 @@ def test_two_way():
     b.x += 1
     assert a.x == 11 and b.x == 12
 
-    Binding.update()
+    update()
     assert a.x == 12 and b.x == 12

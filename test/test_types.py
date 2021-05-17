@@ -10,8 +10,56 @@ class A:
         self.x = x
         self.y = y
 
-def test_types():
+def test_none():
+
+    a = A(None, None)
+    a.x.bind_2way(a.y)
+    assert a.x == a.y
+
+def test_bool():
 
     a = A(True, False)
-    # a.x.bind_to(a.y) # TODO: not working
-    # assert a.x == a.y
+    a.x.bind_2way(a.y)
+    assert a.x == a.y
+
+def test_int():
+
+    a = A(1, 2)
+    a.x.bind_2way(a.y)
+    assert a.x == a.y
+
+def test_float():
+
+    a = A(1.0, 2.0)
+    a.x.bind_2way(a.y)
+    assert a.x == a.y
+
+def test_str():
+
+    a = A('1', '2')
+    a.x.bind_2way(a.y)
+    assert a.x == a.y
+
+def test_tuple():
+
+    a = A((1,), (2,))
+    a.x.bind_2way(a.y)
+    assert a.x == a.y
+
+def test_list():
+
+    a = A([1], [2])
+    a.x.bind_2way(a.y)
+    assert a.x == a.y
+
+def test_dict():
+
+    a = A({1: 1}, {2: 2})
+    a.x.bind_2way(a.y)
+    assert a.x == a.y
+
+def test_set():
+
+    a = A({1}, {2})
+    a.x.bind_2way(a.y)
+    assert a.x == a.y

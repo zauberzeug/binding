@@ -2,8 +2,25 @@
 from collections import defaultdict
 import inspect
 from executing import Source
+from forbiddenfruit import curse
 
-def get_argument():
+def _extract_object(expression, callFrame):
+
+    words = expression.split('.')
+    obj = callFrame.f_locals[words.pop(0)]
+    while len(words) > 1:
+        obj = getattr(obj, words.pop(0))
+    return obj, words[0]
+
+def _get_argument():
+
+    callFrame = inspect.currentframe().f_back.f_back
+    callNode = Source.executing(callFrame).node
+    source = Source.for_frame(callFrame)
+    expression = source.asttokens().get_text(callNode.args[0])
+    return _extract_object(expression, callFrame)
+
+def _get_argument():
 
     callFrame = inspect.currentframe().f_back.f_back
     callNode = Source.executing(callFrame).node
@@ -17,66 +34,55 @@ def get_argument():
 
     return obj, words[0]
 
-class Binding:
+bindings = defaultdict(list)
 
-    b2b_bindings = defaultdict(list)  # NOTE: bindable to bindable properties
-    b2n_bindings = defaultdict(list)  # NOTE: bindable to normal properties
-    n2b_bindings = defaultdict(list)  # NOTE: normal to bindable properties
+def update():
 
-    @staticmethod
-    def update():
+    for source, targets in bindings.items():
+        if source in bindable_properties:
+            continue
+        source_obj, source_name = source
+        for target_obj, target_name, transform in targets:
+            value = transform(getattr(source_obj, source_name))
+            if getattr(target_obj, target_name) != value:
+                setattr(target_obj, target_name, value)
 
-        for (obj, name), targets in Binding.n2b_bindings.items():
-            for target, transform in targets:
-                value = transform(getattr(obj, name))
-                if target.prop.__get__(target.owner) != value:
-                    target.prop.__set__(target.owner, value)
+def reset():
 
-    @staticmethod
-    def reset():
+    bindings.clear()
 
-        Binding.b2b_bindings.clear()
-        Binding.b2n_bindings.clear()
-        Binding.n2b_bindings.clear()
+def _bind_to(self, _, forward=lambda x: x):
 
-class BindableObject:
+    expression = inspect.stack()[1].code_context[0].strip().split('.bind_to(')[0]
+    callFrame = inspect.currentframe().f_back
+    self_obj, self_name = _extract_object(expression, callFrame)
+    other_obj, other_name = _get_argument()
 
-    def bind_to(self, target, forward=lambda x: x):
+    setattr(other_obj, other_name, forward(self))
+    bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
 
-        value = forward(self.prop.__get__(self.owner).value)
+def _bind_from(_, other, backward=lambda x: x):
 
-        if isinstance(target, BindableObject):
-            Binding.b2b_bindings[self.prop].append((target, forward))
-            target.prop.__set__(target.owner, value)
-        else:
-            obj, name = get_argument()
-            Binding.b2n_bindings[self.prop].append((obj, name, forward))
-            setattr(obj, name, value)
+    expression = inspect.stack()[1].code_context[0].strip().split('.bind_from(')[0]
+    callFrame = inspect.currentframe().f_back
+    self_obj, self_name = _extract_object(expression, callFrame)
+    other_obj, other_name = _get_argument()
 
-    def bind_from(self, source, backward=lambda x: x):
+    setattr(self_obj, self_name, backward(other))
+    bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
 
-        if isinstance(source, BindableObject):
-            value = backward(source.prop.__get__(source.owner).value)
-            Binding.b2b_bindings[source.prop].append((self, backward))
-            self.prop.__set__(self.owner, value)
-        else:
-            obj, name = get_argument()
-            Binding.n2b_bindings[(obj, name)].append((self, backward))
-            self.prop.__set__(self.owner, backward(source))
+def _bind_2way(self, _, forward=lambda x: x, backward=lambda x: x):
 
-    def bind_2way(self, other, forward=lambda x: x, backward=lambda x: x):
+    expression = inspect.stack()[1].code_context[0].strip().split('.bind_2way(')[0]
+    callFrame = inspect.currentframe().f_back
+    self_obj, self_name = _extract_object(expression, callFrame)
+    other_obj, other_name = _get_argument()
 
-        value = forward(self.prop.__get__(self.owner).value)
+    setattr(other_obj, other_name, forward(self))
+    bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
+    bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
 
-        if isinstance(other, BindableObject):
-            Binding.b2b_bindings[self.prop].append((other, forward))
-            Binding.b2b_bindings[other.prop].append((self, backward))
-            other.prop.__set__(other.owner, value)
-        else:
-            obj, name = get_argument()
-            Binding.b2n_bindings[self.prop].append((obj, name, forward))
-            Binding.n2b_bindings[(obj, name)].append((self, backward))
-            setattr(obj, name, value)
+bindable_properties = set()
 
 class BindableProperty:
 
@@ -86,19 +92,19 @@ class BindableProperty:
 
     def __get__(self, owner, _=None):
 
-        value = getattr(owner, '_' + self.name)
-        bindable = type('', (type(value), BindableObject), {})(value)
-        bindable.value = value
-        bindable.owner = owner
-        vars(bindable)['prop'] = self
-        return bindable
+        return getattr(owner, '_' + self.name)
 
     def __set__(self, owner, value):
 
         setattr(owner, '_' + self.name, value)
-        for target, forward in Binding.b2b_bindings[self]:
-            if target.prop.__get__(target.owner) != forward(value):
-                target.prop.__set__(target.owner, forward(value))
-        for obj, name, forward in Binding.b2n_bindings[self]:
-            if getattr(obj, name) != forward(value):
-                setattr(obj, name, forward(value))
+
+        bindable_properties.add((owner, self.name))
+
+        for obj, name, transform in bindings[(owner, self.name)]:
+            if getattr(obj, name) != transform(value):
+                setattr(obj, name, transform(value))
+
+for type_ in [type(None), bool, int, float, str, tuple, list, dict, set]:
+    curse(type_, 'bind_to', _bind_to)
+    curse(type_, 'bind_from', _bind_from)
+    curse(type_, 'bind_2way', _bind_2way)
