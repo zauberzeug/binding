@@ -39,6 +39,19 @@ def update():
             if getattr(target_obj, target_name) != value:
                 setattr(target_obj, target_name, value)
 
+def propagate(source_obj, source_name, source_value, visited=None):
+
+    if visited is None:
+        visited = set()
+    visited.add((source_obj, source_name))
+    for target_obj, target_name, transform in bindings[(source_obj, source_name)]:
+        if (target_obj, target_name) in visited:
+            continue
+        target_value = transform(source_value)
+        if getattr(target_obj, target_name) != target_value:
+            setattr(target_obj, target_name, target_value)
+            propagate(target_obj, target_name, target_value, visited)
+
 def reset():
 
     bindings.clear()
@@ -46,21 +59,21 @@ def reset():
 def _bind_to(self, _, forward=lambda x: x):
 
     self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_to')
-    setattr(other_obj, other_name, forward(self))
     bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
+    propagate(self_obj, self_name, self)
 
 def _bind_from(_, other, backward=lambda x: x):
 
     self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_from')
-    setattr(self_obj, self_name, backward(other))
     bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
+    propagate(other_obj, other_name, other)
 
 def _bind_2way(self, _, forward=lambda x: x, backward=lambda x: x):
 
     self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_2way')
-    setattr(other_obj, other_name, forward(self))
     bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
     bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
+    propagate(self_obj, self_name, self)
 
 bindable_properties = set()
 
@@ -80,9 +93,7 @@ class BindableProperty:
 
         bindable_properties.add((owner, self.name))
 
-        for obj, name, transform in bindings[(owner, self.name)]:
-            if getattr(obj, name) != transform(value):
-                setattr(obj, name, transform(value))
+        propagate(owner, self.name, value)
 
 for type_ in [type(None), bool, int, float, str, tuple, list, dict, set]:
     curse(type_, 'bind_to', _bind_to)
