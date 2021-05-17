@@ -68,12 +68,12 @@ def _bind_from(_, other, backward=lambda x: x):
     bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
     propagate(other_obj, other_name, other)
 
-def _bind_2way(self, _, forward=lambda x: x, backward=lambda x: x):
+def _bind(_, other, forward=lambda x: x, backward=lambda x: x):
 
-    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_2way')
+    self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind')
     bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
     bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
-    propagate(self_obj, self_name, self)
+    propagate(other_obj, other_name, other)
 
 bindable_properties = set()
 
@@ -98,4 +98,4 @@ class BindableProperty:
 for type_ in [type(None), bool, int, float, str, tuple, list, dict, set]:
     curse(type_, 'bind_to', _bind_to)
     curse(type_, 'bind_from', _bind_from)
-    curse(type_, 'bind_2way', _bind_2way)
+    curse(type_, 'bind', _bind)

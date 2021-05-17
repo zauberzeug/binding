@@ -39,8 +39,8 @@ def test_backward():
 def test_2way():
 
     t = Temperature()
-    t.c.bind_2way(t.f, forward=lambda c: c * 1.8 + 32, backward=lambda f: (f - 32) / 1.8)
-    assert t.c == 0.0 and t.f == 32.0
+    t.c.bind(t.f, forward=lambda c: c * 1.8 + 32, backward=lambda f: (f - 32) / 1.8)
+    assert t.c == pytest.approx(-17.77778) and t.f == 0.0
 
     t.f = 68.0
     assert t.c == 20.0 and t.f == 68.0
@@ -80,8 +80,8 @@ def test_2way_normal():
     reset()  # TODO: how to avoid this line?
 
     t = Temperature()
-    t.c.bind_2way(t.k, forward=lambda c: c + 273.15, backward=lambda k: k - 273.15)
-    assert t.c == 0.0 and t.k == 273.15
+    t.c.bind(t.k, forward=lambda c: c + 273.15, backward=lambda k: k - 273.15)
+    assert t.c == -273.15 and t.k == 0.0
 
     t.c = 20.0
     assert t.c == 20.0 and t.k == 293.15

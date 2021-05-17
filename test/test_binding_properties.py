@@ -32,8 +32,8 @@ def test_bindables():
     car1.color.bind_from(car2.color)
     assert(car1.color == 'blue' and car2.color == 'blue')
 
-    car1.weight.bind_2way(car2.weight)
-    assert(car1.weight == 1200 and car2.weight == 1200)
+    car1.weight.bind(car2.weight)
+    assert(car1.weight == 1500 and car2.weight == 1500)
 
     car2.weight = 1000
     assert(car1.weight == 1000 and car2.weight == 1000)

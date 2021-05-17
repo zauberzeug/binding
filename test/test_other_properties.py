@@ -53,14 +53,14 @@ def test_two_way():
     a = A(10)
     b = B(20)
 
-    a.x.bind_2way(b.x)
-    assert a.x == 10 and b.x == 10
+    a.x.bind(b.x)
+    assert a.x == 20 and b.x == 20
 
     a.x += 1
-    assert a.x == 11 and b.x == 11
+    assert a.x == 21 and b.x == 21
 
     b.x += 1
-    assert a.x == 11 and b.x == 12
+    assert a.x == 21 and b.x == 22
 
     update()
-    assert a.x == 12 and b.x == 12
+    assert a.x == 22 and b.x == 22

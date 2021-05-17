@@ -16,7 +16,7 @@ def test_propagation():
 
     a = A(1, 2, 3)
 
-    a.x.bind_2way(a.z)
-    a.y.bind_2way(a.z)
+    a.x.bind(a.z)
+    a.y.bind(a.z)
 
-    assert a.x == 2 and a.y == 2 and a.z == 2
+    assert a.x == 3 and a.y == 3 and a.z == 3
