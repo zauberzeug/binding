@@ -1,4 +1,12 @@
 [[package]]
+name = "executing"
+version = "0.6.0"
+description = "Get the currently executing AST node of a frame, and other information"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "forbiddenfruit"
 version = "0.1.4"
 description = "Patch python built-in objects"
@@ -9,9 +17,13 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "b810879c217ccd108938d893549f11eb647975eb25f8bfc012adf1335adb7c1a"
+content-hash = "cd615a0bf9e843196c5923eb55b22ccfe501be1fed874022365129206c939681"
 
 [metadata.files]
+executing = [
+    {file = "executing-0.6.0-py2.py3-none-any.whl", hash = "sha256:a2f10f802b4312b92bd256279b43720271b0d9b540a0dbab7be4c28fbc536479"},
+    {file = "executing-0.6.0.tar.gz", hash = "sha256:a07046e608c56948a899e1c7dc45327ed84ee67edf245041eb8c6722658c14e3"},
+]
 forbiddenfruit = [
     {file = "forbiddenfruit-0.1.4.tar.gz", hash = "sha256:e3f7e66561a29ae129aac139a85d610dbf3dd896128187ed5454b6421f624253"},
 ]

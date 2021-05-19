@@ -11,6 +11,7 @@ keywords = ["bind", "properties", "ui", "automatic", "values"]
 [tool.poetry.dependencies]
 python = "^3.7"
 forbiddenfruit = "^0.1.4"
+executing = "^0.6.0"
 
 [tool.poetry.dev-dependencies]
 
