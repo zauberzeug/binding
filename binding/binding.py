@@ -45,9 +45,9 @@ def propagate(source_obj, source_name, visited=None):
 
     if visited is None:
         visited = set()
-    visited.add((source_obj, source_name))
+    visited.add((id(source_obj), source_name))
     for _, target_obj, target_name, transform in bindings[(id(source_obj), source_name)]:
-        if (target_obj, target_name) in visited:
+        if (id(target_obj), target_name) in visited:
             continue
         target_value = transform(getattr(source_obj, source_name))
         if getattr(target_obj, target_name) != target_value:
