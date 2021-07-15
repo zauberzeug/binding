@@ -35,8 +35,8 @@ def update():
     for source, targets in bindings.items():
         if source in bindable_properties:
             continue
-        source_obj, source_name = source
-        for target_obj, target_name, transform in targets:
+        _, source_name = source
+        for source_obj, target_obj, target_name, transform in targets:
             value = transform(getattr(source_obj, source_name))
             if getattr(target_obj, target_name) != value:
                 setattr(target_obj, target_name, value)
@@ -46,7 +46,7 @@ def propagate(source_obj, source_name, visited=None):
     if visited is None:
         visited = set()
     visited.add((source_obj, source_name))
-    for target_obj, target_name, transform in bindings[(source_obj, source_name)]:
+    for _, target_obj, target_name, transform in bindings[(id(source_obj), source_name)]:
         if (target_obj, target_name) in visited:
             continue
         target_value = transform(getattr(source_obj, source_name))
@@ -61,20 +61,20 @@ def reset():
 def _bind_to(*_, forward=lambda x: x, nesting=0):
 
     self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_to', nesting)
-    bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
+    bindings[(id(self_obj), self_name)].append((self_obj, other_obj, other_name, forward))
     propagate(self_obj, self_name)
 
 def _bind_from(*_, backward=lambda x: x, nesting=0):
 
     self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind_from', nesting)
-    bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
+    bindings[(id(other_obj), other_name)].append((other_obj, self_obj, self_name, backward))
     propagate(other_obj, other_name)
 
 def _bind(*_, forward=lambda x: x, backward=lambda x: x, nesting=0):
 
     self_obj, self_name, other_obj, other_name = _get_parent_and_argument('bind', nesting)
-    bindings[(self_obj, self_name)].append((other_obj, other_name, forward))
-    bindings[(other_obj, other_name)].append((self_obj, self_name, backward))
+    bindings[(id(self_obj), self_name)].append((self_obj, other_obj, other_name, forward))
+    bindings[(id(other_obj), other_name)].append((other_obj, self_obj, self_name, backward))
     propagate(other_obj, other_name)
 
 bindable_properties = set()
@@ -93,7 +93,7 @@ class BindableProperty:
 
         setattr(owner, '_' + self.name, value)
 
-        bindable_properties.add((owner, self.name))
+        bindable_properties.add((id(owner), self.name))
 
         propagate(owner, self.name)
 
