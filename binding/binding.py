@@ -32,6 +32,7 @@ bindings = defaultdict(list)
 
 def update():
 
+    visited = set()
     for source, targets in bindings.items():
         if source in bindable_properties:
             continue
@@ -40,6 +41,7 @@ def update():
             value = transform(getattr(source_obj, source_name))
             if getattr(target_obj, target_name) != value:
                 setattr(target_obj, target_name, value)
+                propagate(target_obj, target_name, visited)
 
 def propagate(source_obj, source_name, visited=None):
 
